@@ -19,17 +19,18 @@ namespace DelegateExceptionProj
 
         public void TriggerDel()
         {
-            //foreach (var del in Eve.GetInvocationList())
-            try
-            {
-                //del.("Delegate call");
-                Del("Delegate call");
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Cathed Error!!!");
+            foreach (var del in Eve.GetInvocationList())
+                try
+                {
+                    //looks good!!!! but not good enough
+                    del.Method.Invoke("Delegate call, say Hello", null);
+                    Del("Delegate call");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Cathed Error!!!");
 
-            };
+                };
         }
 
     }
@@ -48,11 +49,32 @@ namespace DelegateExceptionProj
         {
             foreach (var del in DelList)
             {
-                try {
+                try
+                {
                     del("Delegate call");
                 }
-                catch {
+                catch
+                {
                     Console.WriteLine("Cathed Error!!!");
+                }
+            }
+        }
+    }
+
+    static class DelegateHelper
+    {
+        public static void ExceptionSafe(this MulticastDelegate target, params object[] args)
+        {
+            if (target == null) return;
+            foreach (var del in target.GetInvocationList())
+            {
+                try
+                {
+                    del.DynamicInvoke(args);
+                }
+                catch
+                {
+                    Console.WriteLine("Exception caught!");
                 }
             }
         }
@@ -62,8 +84,20 @@ namespace DelegateExceptionProj
     {
         static void Main(string[] args)
         {
+            #region  question on interview
+            //List<customDelegate> localDelCollection = new List<customDelegate>();
+
+            //for (int i = 0; i < 15; i++)
+            //    localDelCollection.Add((msg) => Console.WriteLine(i));
+
+            //foreach (var del in localDelCollection)
+            //{
+            //    del("");
+            //}
+            #endregion
+
             #region not working
-            //Car car = new Car();
+            //DelEvent car = new DelEvent();
 
             //for (int i = 0; i < 5; i++)
             //    car.AddDel((msg) => Console.WriteLine(msg));
@@ -75,35 +109,50 @@ namespace DelegateExceptionProj
 
             //car.TriggerDel();
             #endregion
+            
+            #region not exactly
+            //DelCollection delCollection = new DelCollection();
 
-            DelCollection delCollection = new DelCollection();
+            //for (int i = 0; i < 5; i++)
+            //    delCollection.AddDel((msg) => Console.WriteLine(msg));
 
+            //delCollection.AddDel((msg) => throw new Exception("Error!!!"));
+
+            //for (int i = 0; i < 5; i++)
+            //    delCollection.AddDel((msg) => Console.WriteLine(msg));
+
+            //delCollection.TriggerDel();
+
+            //Console.WriteLine("End of delegates!");
+
+            #endregion
+
+            #region the right way
+            customDelegate dels = null;
             for (int i = 0; i < 5; i++)
-                delCollection.AddDel((msg) => Console.WriteLine(msg));
+                dels += ((msg) => Console.WriteLine(msg));
 
-            delCollection.AddDel((msg) => throw new Exception("Error!!!"));
-
+            //dels += ((msg) => throw new Exception("Error!!!"));
+            dels += Exception;
             for (int i = 0; i < 5; i++)
-                delCollection.AddDel((msg) => Console.WriteLine(msg));
+                dels += ((msg) => Console.WriteLine(msg));
 
-            delCollection.TriggerDel();
-
-            Console.WriteLine("End of delegates!");
+            dels.ExceptionSafe(new object[] { "Hello!!" });
+            #endregion
 
             Console.ReadLine();
 
-            List<customDelegate> localDelCollection = new List<customDelegate>();
+        }
 
-            //question on interview
-            for (int i = 0; i < 15; i++)
-                localDelCollection.Add((msg) => Console.WriteLine(i));
+        static void SomeMessage(object p)
+        {
 
-            foreach(var del in localDelCollection)
-            {
-                del("");
-            }
-            Console.ReadLine();
+            Console.WriteLine(p);
+        }
 
+        static void Exception(object p)
+        {
+            throw new Exception(p.ToString());
         }
     }
 }
